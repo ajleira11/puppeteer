@@ -55,40 +55,25 @@ async function run() {
       })
     );
 
+    //open job links and add the description inside the jobs list
     await Promise.all(
       jobs.map(async (job) => {
         const jobLandingPage = await browser.newPage();
         await jobLandingPage.goto(job.jobURL);
-
-        // Extract job description from the landing page
-        // job.description = await jobLandingPage.$eval(
-        //   ".content", // Replace with the appropriate selector
-        //   (description) =>
-        //     description
-        //       .querySelector('meta[twitter="description"]')
-        //       .getAttribute("content")
-        // );
-
         job.description = await jobLandingPage.$eval(
           'meta[property="og:description"]', // Selector for the meta tag containing the description
-          (element) => (element ? element.getAttribute("content") : "")
+          (element) =>
+            element ? element.getAttribute("content") : 12837192847985623956235
         );
 
         await jobLandingPage.close();
       })
     );
 
-    // for (let index = 0; index < jobs.length; index++) {
-    //   const job = jobs[index];
-    //   const jobLandingPage = await browser.newPage();
-    //   await jobLandingPage.goto(job.jobURL);
-    //   console.log(`Job number ${index + 1}`);
-    //   await jobLandingPage.close();
-    // }
-
     console.log("Jobs:", jobs, jobs.length);
-
-    //open job links and add the description inside the jobs list
+    // jobs.forEach((job) => {
+    //   console.log("Job Description:", job.description);
+    // });
 
     await browser.close();
     // console.log("Browser closed.");
