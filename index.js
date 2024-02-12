@@ -77,17 +77,47 @@ async function run() {
 }
 
 async function addDescription(jobs, browser) {
-  for (const job of jobs) {
-    const jobLandingPage = await browser.newPage();
-    await jobLandingPage.goto(job.jobURL);
-    await jobLandingPage.waitForSelector('meta[property="og:description"]');
-    job.description = await jobLandingPage.$eval(
-      'meta[property="og:description"]', // Selector for the meta tag containing the description
-      (element) => (element ? element.getAttribute("content") : "")
-    );
-    await jobLandingPage.close();
+  try {
+    for (const job of jobs) {
+      const jobLandingPage = await browser.newPage();
+      await jobLandingPage.goto(job.jobURL);
+      await jobLandingPage.waitForSelector('meta[property="og:description"]');
+      job.description = await jobLandingPage.$eval(
+        'meta[property="og:description"]', // Selector for the meta tag containing the description
+        (element) => (element ? element.getAttribute("content") : "")
+      );
+      await jobLandingPage.close();
+    }
+
+    const jsonData = jobs.map((job, index) => ({
+      companyName: job.companyName,
+      createdAt: "",
+      status: "",
+      companyId: "",
+      applyLink: job.jobURL,
+      title: job.title,
+      workStyle: job.workStyle,
+      workType: job.workType,
+      seniority: "",
+      location: job.location,
+      timing: "",
+      areas: job.areas,
+      images: "",
+      video: "",
+      audio: "",
+      description: job.description,
+      questions: {
+        problems: "",
+        traits: "",
+        whyNow: "",
+      },
+      hiringManagerIds: "",
+    }));
+
+    return jsonData;
+  } catch (error) {
+    console.error("An error occurred:", error);
   }
-  return jobs;
 }
 
 run();

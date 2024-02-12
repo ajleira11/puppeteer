@@ -65,6 +65,7 @@ async function takeData(browser, url) {
 }
 
 async function addDescription(jobs, browser) {
+  console.log("Adding description");
   for (const job of jobs) {
     const jobLandingPage = await browser.newPage();
     await jobLandingPage.goto(job.jobURL);
@@ -97,29 +98,35 @@ async function createStorageBucketIfMissing(storage, bucketName) {
 
 async function uploadImage(bucket, taskIndex, jobsData) {
   // Create filename using the current time and task index
-  const date = new Date();
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  const filename = `${date.toISOString()}-${
-    jobsData.companyName
-  }-task${taskIndex}`;
+  try {
+    console.log(jobsData.companyName);
+    const date = new Date();
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    const filename = `${date.toISOString()}-${
+      jobsData.companyName
+    }-task${taskIndex}`;
 
-  console.log(`Uploading screenshot as '${filename}'`);
-  await bucket.file(filename).save(jobsData);
+    // console.log(`Uploading jobs data as '${filename}'`);
+    // await bucket.file(filename).save(jobsData);
 
-  const jsonData = {
-    companyName: jobsData.companyName,
-    jobs: jobsData.jobs.map((job) => ({
-      title: job.title,
-      location: job.location,
-      workStyle: job.workStyle,
-      workType: job.workType,
-      url: job.jobURL,
-      areas: job.areas,
-      description: job.description,
-    })),
-  };
-  console.log(`Uploading data as '${filename}.json'`);
-  await bucket.file(`${filename}.json`).save(JSON.stringify(jsonData));
+    const jsonData = {
+      companyName: jobsData.companyName,
+      jobs: jobsData.jobs.map((job) => ({
+        title: job.title,
+        location: job.location,
+        workStyle: job.workStyle,
+        workType: job.workType,
+        url: job.jobURL,
+        areas: job.areas,
+        description: job.description,
+      })),
+    };
+
+    console.log(`Uploading data as '${filename}.json'`);
+    await bucket.file(`${filename}.json`).save(JSON.stringify(jsonData));
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function main(urls) {
