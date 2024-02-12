@@ -9,7 +9,7 @@ async function initBrowser() {
 async function takeData(browser, url) {
   const page = await browser.newPage();
 
-  console.log(`Navigating to ${url}`);
+  console.log(`Taking data from ${url}`);
   await page.goto(url);
 
   await page.waitForSelector(".posting");
@@ -130,9 +130,9 @@ async function uploadImage(bucket, taskIndex, jobsData) {
       },
       hiringManagerIds: "",
     }));
-
+    const finalData = JSON.stringify(jsonData);
     console.log(`Uploading data as '${filename}.json'`);
-    await bucket.file(`${filename}.json`).save(JSON.stringify(jsonData));
+    await bucket.file(`${filename}.json`).save(finalData);
   } catch (err) {
     console.error(err);
   }
@@ -142,6 +142,7 @@ async function main(urls) {
   console.log(`Passed in urls: ${urls}`);
 
   const taskIndex = process.env.CLOUD_RUN_TASK_INDEX || 0;
+  console.log(`Running task index: ${taskIndex}`);
   const url = urls[taskIndex];
   if (!url) {
     throw new Error(
@@ -166,6 +167,7 @@ async function main(urls) {
   await browser.close();
 
   console.log("Initializing Cloud Storage client");
+  console.log(jobsData);
   const storage = new Storage();
   const bucket = await createStorageBucketIfMissing(storage, bucketName);
   await uploadImage(bucket, taskIndex, jobsData);
