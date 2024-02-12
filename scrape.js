@@ -6,7 +6,7 @@ async function initBrowser() {
   return await puppeteer.launch();
 }
 
-async function takeScreenshot(browser, url) {
+async function takeData(browser, url) {
   const page = await browser.newPage();
 
   console.log(`Navigating to ${url}`);
@@ -22,42 +22,53 @@ async function takeScreenshot(browser, url) {
 
   console.log("Company Name:", companyName);
 
-  const jobs = await page.$$eval(".postings-group .posting", (elements) =>
-    elements.map((posting) => {
-      const areasElement = posting
-        .closest(".postings-group")
-        .querySelector(".large-category-label");
-      const areas = areasElement ? areasElement.innerText : ""; //returning an error when its empty
-      //posting.closest(".posting-group").querySelector(".large-category-label");
-      const workTypeElement = posting.querySelector(
-        ".posting-categories .sort-by-commitment"
-      );
-      const workType = workTypeElement ? workTypeElement.innerText : ""; // return an empty string if workType is empty
+  const jobs = await page.$$eval(
+    ".postings-group .posting",
+    (elements, companyName) =>
+      elements.map((posting) => {
+        const areasElement = posting
+          .closest(".postings-group")
+          .querySelector(".large-category-label");
+        const areas = areasElement ? areasElement.innerText : "";
+        const workTypeElement = posting.querySelector(
+          ".posting-categories .sort-by-commitment"
+        );
+        const workType = workTypeElement ? workTypeElement.innerText : "";
 
-      return {
-        areas: areas,
-        title: posting.querySelector(
-          ".posting-title h5[data-qa='posting-name']"
-        ).innerText,
-        location: posting.querySelector(
-          ".posting-title .posting-categories .sort-by-location"
-        ).innerText,
-        workStyle: posting.querySelector(".posting-categories .workplaceTypes")
-          .innerText,
-        workType: workType,
-        jobURL: posting.querySelector(".posting .posting-title").href,
-      };
-    })
+        return {
+          companyName: companyName,
+          areas: areas,
+          title: posting.querySelector(
+            ".posting-title h5[data-qa='posting-name']"
+          ).innerText,
+          location: posting.querySelector(
+            ".posting-title .posting-categories .sort-by-location"
+          ).innerText,
+          workStyle: posting.querySelector(
+            ".posting-categories .workplaceTypes"
+          ).innerText,
+          workType: workType,
+          jobURL: posting.querySelector(".posting .posting-title").href,
+        };
+      }),
+    companyName
   );
-
   //open job links and add the description inside the jobs list
+  const updatedJobs = await addDescription(jobs, browser);
+  await browser.close();
+  return updatedJobs;
+}
+
+async function addDescription(jobs, browser) {
   await Promise.all(
     jobs.map(async (job) => {
       const jobLandingPage = await browser.newPage();
       await jobLandingPage.goto(job.jobURL);
+      await jobLandingPage.waitForSelector('meta[property="og:description"]');
       job.description = await jobLandingPage.$eval(
         'meta[property="og:description"]', // Selector for the meta tag containing the description
-        (element) => (element ? element.getAttribute("content") : "")
+        (element) =>
+          element ? element.getAttribute("content") : 12837192847985623956235
       );
 
       await jobLandingPage.close();
@@ -84,14 +95,31 @@ async function createStorageBucketIfMissing(storage, bucketName) {
   return createdBucket;
 }
 
-async function uploadImage(bucket, taskIndex, imageBuffer) {
+async function uploadImage(bucket, taskIndex, jobsData) {
   // Create filename using the current time and task index
   const date = new Date();
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  const filename = `${date.toISOString()}-task${taskIndex}.png`;
+  const filename = `${date.toISOString()}-${
+    jobsData.companyName
+  }-task${taskIndex}`;
 
   console.log(`Uploading screenshot as '${filename}'`);
-  await bucket.file(filename).save(imageBuffer);
+  await bucket.file(filename).save(jobsData);
+
+  const jsonData = {
+    companyName: jobsData.companyName,
+    jobs: jobsData.jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      workStyle: job.workStyle,
+      workType: job.workType,
+      url: job.jobURL,
+      areas: job.areas,
+      description: job.description,
+    })),
+  };
+  console.log(`Uploading data as '${filename}.json'`);
+  await bucket.file(`${filename}.json`).save(JSON.stringify(jsonData));
 }
 
 async function main(urls) {
@@ -114,7 +142,7 @@ async function main(urls) {
   }
 
   const browser = await initBrowser();
-  const imageBuffer = await takeScreenshot(browser, url).catch(async (err) => {
+  const jobsData = await takeData(browser, url).catch(async (err) => {
     // Make sure to close the browser if we hit an error.
     await browser.close();
     throw err;
@@ -124,7 +152,7 @@ async function main(urls) {
   console.log("Initializing Cloud Storage client");
   const storage = new Storage();
   const bucket = await createStorageBucketIfMissing(storage, bucketName);
-  await uploadImage(bucket, taskIndex, imageBuffer);
+  await uploadImage(bucket, taskIndex, jobsData);
 
   console.log("Upload complete!");
 }
