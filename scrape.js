@@ -60,7 +60,7 @@ async function takeData(browser, url) {
   );
   //open job links and add the description inside the jobs list
   const updatedJobs = await addDescription(jobs, browser);
-  await browser.close();
+
   return updatedJobs;
 }
 
