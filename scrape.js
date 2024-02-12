@@ -106,9 +106,6 @@ async function uploadImage(bucket, taskIndex, jobsData) {
       jobsData.companyName
     }-task${taskIndex}`;
 
-    // console.log(`Uploading jobs data as '${filename}'`);
-    // await bucket.file(filename).save(jobsData);
-
     const jsonData = {
       companyName: jobsData.companyName,
       jobs: jobsData.jobs.map((job) => ({
