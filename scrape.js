@@ -106,18 +106,30 @@ async function uploadImage(bucket, taskIndex, jobsData) {
       jobsData.companyName
     }-task${taskIndex}`;
 
-    const jsonData = {
-      companyName: jobsData.companyName,
-      jobs: jobsData.jobs.map((job) => ({
-        title: job.title,
-        location: job.location,
-        workStyle: job.workStyle,
-        workType: job.workType,
-        url: job.jobURL,
-        areas: job.areas,
-        description: job.description,
-      })),
-    };
+    const jsonData = jobsData.map((job, index) => ({
+      companyName: job.companyName,
+      createdAt: "",
+      status: "",
+      companyId: "",
+      applyLink: job.jobURL,
+      title: job.title,
+      workStyle: job.workStyle,
+      workType: job.workType,
+      seniority: "",
+      location: job.location,
+      timing: "",
+      areas: job.areas,
+      images: "",
+      video: "",
+      audio: "",
+      description: job.description,
+      questions: {
+        problems: "",
+        traits: "",
+        whyNow: "",
+      },
+      hiringManagerIds: "",
+    }));
 
     console.log(`Uploading data as '${filename}.json'`);
     await bucket.file(`${filename}.json`).save(JSON.stringify(jsonData));
