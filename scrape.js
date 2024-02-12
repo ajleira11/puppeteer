@@ -24,8 +24,8 @@ async function takeData(browser, url) {
 
   const jobs = await page.$$eval(
     ".postings-group .posting",
-    (elements, companyName) =>
-      elements.map((posting) => {
+    (postings, companyName) =>
+      postings.map((posting) => {
         const areasElement = posting
           .closest(".postings-group")
           .querySelector(".large-category-label");
@@ -35,20 +35,25 @@ async function takeData(browser, url) {
         );
         const workType = workTypeElement ? workTypeElement.innerText : "";
 
+        const titleElement = posting.querySelector(
+          ".posting-title h5[data-qa='posting-name']"
+        );
+        const locationElement = posting.querySelector(
+          ".posting-title .posting-categories .sort-by-location"
+        );
+        const workStyleElement = posting.querySelector(
+          ".posting-categories .workplaceTypes"
+        );
+        const jobURLElement = posting.querySelector(".posting .posting-title");
+
         return {
           companyName: companyName,
           areas: areas,
-          title: posting.querySelector(
-            ".posting-title h5[data-qa='posting-name']"
-          ).innerText,
-          location: posting.querySelector(
-            ".posting-title .posting-categories .sort-by-location"
-          ).innerText,
-          workStyle: posting.querySelector(
-            ".posting-categories .workplaceTypes"
-          ).innerText,
+          title: titleElement ? titleElement.innerText : "",
+          location: locationElement ? locationElement.innerText : "",
+          workStyle: workStyleElement ? workStyleElement.innerText : "",
           workType: workType,
-          jobURL: posting.querySelector(".posting .posting-title").href,
+          jobURL: jobURLElement ? jobURLElement.href : "",
         };
       }),
     companyName
@@ -60,21 +65,16 @@ async function takeData(browser, url) {
 }
 
 async function addDescription(jobs, browser) {
-  await Promise.all(
-    jobs.map(async (job) => {
-      const jobLandingPage = await browser.newPage();
-      await jobLandingPage.goto(job.jobURL);
-      await jobLandingPage.waitForSelector('meta[property="og:description"]');
-      job.description = await jobLandingPage.$eval(
-        'meta[property="og:description"]', // Selector for the meta tag containing the description
-        (element) =>
-          element ? element.getAttribute("content") : 12837192847985623956235
-      );
-
-      await jobLandingPage.close();
-    })
-  );
-
+  for (const job of jobs) {
+    const jobLandingPage = await browser.newPage();
+    await jobLandingPage.goto(job.jobURL);
+    await jobLandingPage.waitForSelector('meta[property="og:description"]');
+    job.description = await jobLandingPage.$eval(
+      'meta[property="og:description"]', // Selector for the meta tag containing the description
+      (element) => (element ? element.getAttribute("content") : "")
+    );
+    await jobLandingPage.close();
+  }
   return jobs;
 }
 
