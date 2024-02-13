@@ -87,6 +87,7 @@ async function createStorageBucketIfMissing(storage, bucketName) {
   const [exists] = await bucket.exists();
   if (exists) {
     // Bucket exists, nothing to do here
+    console.log(`bucket '${bucketName}' exists`);
     return bucket;
   }
 
@@ -97,13 +98,14 @@ async function createStorageBucketIfMissing(storage, bucketName) {
 }
 
 async function uploadImage(bucket, taskIndex, jobsData) {
-  // Create filename using the current time and task index
   try {
-    console.log(jobsData.companyName);
+    console.log("Uploading image...");
+    console.log("Jobs data:", jobsData);
+
     const date = new Date();
     date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
     const filename = `${date.toISOString()}-${
-      jobsData.companyName
+      jobsData[0].companyName // Assuming companyName is in the first job object
     }-task${taskIndex}`;
 
     const jsonData = jobsData.map((job, index) => ({
@@ -130,6 +132,7 @@ async function uploadImage(bucket, taskIndex, jobsData) {
       },
       hiringManagerIds: "",
     }));
+
     const finalData = JSON.stringify(jsonData);
     console.log(`Uploading data as '${filename}.json'`);
     await bucket.file(`${filename}.json`).save(finalData);
@@ -167,7 +170,6 @@ async function main(urls) {
   await browser.close();
 
   console.log("Initializing Cloud Storage client");
-  console.log(jobsData);
   const storage = new Storage();
   const bucket = await createStorageBucketIfMissing(storage, bucketName);
   await uploadImage(bucket, taskIndex, jobsData);
