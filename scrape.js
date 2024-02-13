@@ -105,7 +105,7 @@ async function uploadImage(bucket, taskIndex, jobsData) {
     const date = new Date();
     date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
     const filename = `${date.toISOString()}-${
-      jobsData[0].companyName // Assuming companyName is in the first job object
+      jobsData[0].companyName
     }-task${taskIndex}`;
 
     const jsonData = jobsData.map((job, index) => ({
