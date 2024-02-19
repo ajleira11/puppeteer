@@ -68,7 +68,7 @@ async function run() {
     const updatedJobs = await addDescription(jobs, browser);
 
     //open job links and add the description inside the jobs list
-    console.log("Jobs:", updatedJobs, jobs.length);
+    console.log("Jobs:", updatedJobs, updatedJobs.length);
 
     await browser.close();
   } catch (error) {
