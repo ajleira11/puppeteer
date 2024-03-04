@@ -57,14 +57,16 @@ async function run() {
             areas: areas,
             title: titleElement ? titleElement.innerText : "",
             location: locationElement ? locationElement.innerText : "",
-            workStyle: workStyleElement ? [workStyleElement.innerText] : [""],
+            workStyle: [workStyleElement],
             workType: [workType],
             jobURL: jobURLElement ? jobURLElement.href : "",
           };
         }),
       companyName
     );
-
+    jobs.map((job) => {
+      console.log(job.workStyle);
+    });
     const updatedJobs = await addDescription(jobs, browser);
 
     const output = await formatOutput(updatedJobs);
@@ -125,7 +127,7 @@ async function formatOutput(jobs) {
   for (let job of jobs) {
     job.workStyle = job.workStyle.flatMap((style) => {
       if (!style) {
-        return [""];
+        return job.workStyle;
       }
       //convert style to single array each word,
       const separateStyleArray = style
@@ -147,7 +149,9 @@ async function formatOutput(jobs) {
 
     job.workType = await job.workType.flatMap((type) => {
       if (!type) {
-        return [""];
+        const filterType = type.filter(Boolean);
+        console.log(filterType);
+        return filterType;
       }
       const separateTypeArray = type.toString().split(" ");
 
