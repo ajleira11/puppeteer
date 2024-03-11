@@ -8,7 +8,7 @@ async function run() {
   try {
     const leverURL = "https://www.lever.co/";
     const inputURL = "https://jobs.lever.co/health-match/";
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     console.log("Launching browser...");
 
